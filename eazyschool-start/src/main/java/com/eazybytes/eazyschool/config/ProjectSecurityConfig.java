@@ -37,11 +37,16 @@ public class ProjectSecurityConfig {
                                 "/courses", "/about", "/assets/**","/login/**").permitAll())
                 .formLogin(flc->flc
                         .loginPage("/login")
+                        //any one can be used Url or handler
                         .defaultSuccessUrl("/dashboard")
                         .failureUrl("/login?error=true")
                         .successHandler(successHandler)
                         .failureHandler(failtureHandler)
                 )
+                .logout(lc->lc.logoutSuccessUrl("/login?logout=true")
+                        .invalidateHttpSession(true)
+                        .clearAuthentication(true)
+                        .deleteCookies("JSESSIONID"))
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
