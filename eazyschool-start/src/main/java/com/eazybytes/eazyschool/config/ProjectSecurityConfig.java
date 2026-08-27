@@ -1,5 +1,7 @@
 package com.eazybytes.eazyschool.config;
 
+import com.eazybytes.eazyschool.handler.FailtureHandler;
+import com.eazybytes.eazyschool.handler.SuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.password.CompromisedPasswordChecker;
@@ -17,14 +19,29 @@ import org.springframework.security.web.authentication.password.HaveIBeenPwnedRe
 @Configuration
 public class ProjectSecurityConfig {
 
+    FailtureHandler failtureHandler;
+    SuccessHandler successHandler;
+
+    public ProjectSecurityConfig(FailtureHandler failtureHandler,SuccessHandler successHandler)
+    {
+        this.failtureHandler=failtureHandler;
+        this.successHandler=successHandler;
+    }
+
     @Bean
     SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
 
         http.csrf((csrf) -> csrf.disable())
-                .authorizeHttpRequests((requests) -> requests.requestMatchers("/dashboard").permitAll()
+                .authorizeHttpRequests((requests) -> requests.requestMatchers("/dashboard").authenticated()
                         .requestMatchers("/", "/home", "/holidays/**", "/contact", "/saveMsg",
-                                "/courses", "/about", "/assets/**").permitAll())
-                .formLogin(Customizer.withDefaults())
+                                "/courses", "/about", "/assets/**","/login/**").permitAll())
+                .formLogin(flc->flc
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard")
+                        .failureUrl("/login?error=true")
+                        .successHandler(successHandler)
+                        .failureHandler(failtureHandler)
+                )
                 .httpBasic(Customizer.withDefaults());
 
         return http.build();
@@ -35,7 +52,7 @@ public class ProjectSecurityConfig {
         UserDetails user = User.withUsername("user")
                 .password("{noop}EazyBytes@12345").authorities("read").build();
         UserDetails admin = User.withUsername("admin")
-                .password("{bcrypt}$2a$12$88.f6upbBvy0okEa7OfHFuorV29qeK.sVbB9VQ6J6dWM1bW6Qef8m")
+                .password("{bcrypt}$2a$12$88.f6upbBvy0okEa7OfHFuorV29qeK.sVbB9VQ6J6dWM1bW6Qef8m")//EazyBytes@54321
                 .authorities("admin").build();
         return new InMemoryUserDetailsManager(user, admin);
     }
